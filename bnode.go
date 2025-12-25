@@ -60,3 +60,32 @@ func (node BNode) getOffset(idx uint16) uint16 {
 	pos := offsetPos(node, idx)
 	return binary.LittleEndian.Uint16(node[pos:])
 }
+
+func (node BNode) kvPos(idx uint16) uint16 {
+	if idx > node.nKeys() {
+		panic("btree: kvPos index out of range")
+	}
+
+	return HEADER + 8*node.nKeys() + 2*node.nKeys() + node.getOffset(idx)
+}
+
+func (node BNode) getKey(idx uint16) []byte {
+	if idx >= node.nKeys() {
+		panic("btree: getKey index out of range")
+	}
+
+	pos := node.kvPos(idx)
+	keyLength := binary.LittleEndian.Uint16(node[pos:])
+	return node[pos+4:][:keyLength]
+}
+
+func (node BNode) getVal(idx uint16) []byte {
+	if idx >= node.nKeys() {
+		panic("btree: getVal index out of range")
+	}
+
+	pos := node.kvPos(idx)
+	keyLength := binary.LittleEndian.Uint16(node[pos:])
+	valLength := binary.LittleEndian.Uint16(node[pos+2:])
+	return node[pos+4+keyLength:][:valLength]
+}
