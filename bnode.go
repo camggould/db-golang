@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 )
 
+const HEADER = 4
+
 const (
 	BNODE_NODE = 1 // internal node
 	BNODE_LEAF = 2 // leaf node
