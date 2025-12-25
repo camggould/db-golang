@@ -43,3 +43,20 @@ func (node BNode) setPtr(idx uint16, ptr uint64) {
 	pos := HEADER + 8*idx
 	binary.LittleEndian.PutUint64(node[pos:], ptr)
 }
+
+func offsetPos(node BNode, idx uint16) uint16 {
+	if 1 > idx || idx > node.nKeys() {
+		panic("btree: offsetPos index out of range")
+	}
+
+	return HEADER + 8*node.nKeys() + 2*(idx-1)
+}
+
+func (node BNode) getOffset(idx uint16) uint16 {
+	if idx == 0 {
+		return 0
+	}
+
+	pos := offsetPos(node, idx)
+	return binary.LittleEndian.Uint16(node[pos:])
+}
