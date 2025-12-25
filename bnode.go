@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 )
 
@@ -88,4 +89,28 @@ func (node BNode) getVal(idx uint16) []byte {
 	keyLength := binary.LittleEndian.Uint16(node[pos:])
 	valLength := binary.LittleEndian.Uint16(node[pos+2:])
 	return node[pos+4+keyLength:][:valLength]
+}
+
+func (node BNode) nbytes() uint16 {
+	return node.kvPos(node.nKeys())
+}
+
+// TODO: implement binary search
+func nodeLookupLE(node BNode, key []byte) uint16 {
+	nkeys := node.nKeys()
+	found := uint16(0)
+
+	for i := uint16(1); i < nkeys; i++ {
+		cmp := bytes.Compare(node.getKey(i), key)
+
+		if cmp <= 0 {
+			found = i
+		}
+
+		if cmp >= 0 {
+			break
+		}
+	}
+
+	return found
 }
