@@ -149,3 +149,12 @@ func nodeAppendRange(new BNode, old BNode, dstNew uint16, srcOld uint16, n uint1
 		new.setPtr(dstNew+i, ptr)
 	}
 }
+
+func nodeReplaceKidN(tree *BTree, new BNode, old BNode, idx uint16, kids ...BNode) {
+	inc := uint16(len(kids))
+	new.setHeader(BNODE_NODE, old.nKeys()+inc-1)
+	for i, node := range kids {
+		nodeAppendKV(new, idx+uint16(i), tree.new(node), node.getKey(0), nil)
+	}
+	nodeAppendRange(new, old, idx+inc, idx+1, old.nKeys()-(idx+1))
+}
