@@ -62,6 +62,15 @@ func (node BNode) getOffset(idx uint16) uint16 {
 	return binary.LittleEndian.Uint16(node[pos:])
 }
 
+func (node BNode) setOffset(idx uint16, offset uint16) {
+	if idx == 0 {
+		panic("btree: setOffset index out of range")
+	}
+
+	pos := offsetPos(node, idx)
+	binary.LittleEndian.PutUint16(node[pos:], offset)
+}
+
 func (node BNode) kvPos(idx uint16) uint16 {
 	if idx > node.nKeys() {
 		panic("btree: kvPos index out of range")
@@ -113,4 +122,30 @@ func nodeLookupLE(node BNode, key []byte) uint16 {
 	}
 
 	return found
+}
+
+func leafInsert(new BNode, old BNode, idx uint16, key []byte, val []byte) {
+	new.setHeader(BNODE_LEAF, old.nKeys()+1) // Incrementing key count
+	nodeAppendRange(new, old, 0, 0, idx)     // FIrst append the
+	nodeAppendKV(new, idx, 0, key, val)
+	nodeAppendRange(new, old, idx+1, idx, old.nKeys()-idx)
+}
+
+func nodeAppendKV(new BNode, idx uint16, ptr uint64, key []byte, val []byte) {
+	new.setPtr(idx, ptr)
+
+	pos := new.kvPos(idx)
+	binary.LittleEndian.PutUint16(new[pos:], uint16(len(key)))
+	binary.LittleEndian.PutUint16(new[pos+2:], uint16(len(val)))
+	copy(new[pos+4:], key)
+	copy(new[pos+4+uint16(len(key)):], val)
+
+	new.setOffset(idx+1, new.getOffset(idx)+4+uint16(len(key)+len(val)))
+}
+
+func nodeAppendRange(new BNode, old BNode, dstNew uint16, srcOld uint16, n uint16) {
+	for i := uint16(0); i < n; i++ {
+		ptr := old.getPtr(srcOld + i)
+		new.setPtr(dstNew+i, ptr)
+	}
 }
